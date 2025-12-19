@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --note-bg: #fff9c4;
+  --note-shadow: rgba(0, 0, 0, 0.15);
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --ai-text: #4a5568;
+  --checkbox-unchecked: #d1d5db;
+  --checkbox-checked: #10b981;
+  --accent: #f59e0b;
+  --surface: rgba(255, 255, 255, 0.7);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
+  background: radial-gradient(circle at top right, #fff2a6, var(--note-bg));
+  height: 100vh;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-radius: 8px;
+  padding: 0 16px 16px;
+  background: linear-gradient(135deg, rgba(255, 249, 196, 0.95), #fff3b0);
+  box-shadow: 0 4px 12px var(--note-shadow), 0 2px 4px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.note__titlebar {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 8px;
+  -webkit-app-region: drag;
+}
+
+.note__title {
+  display: flex;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.note__title-primary {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+}
+
+.note__title-secondary {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ai-text);
+}
+
+.note__close {
+  -webkit-app-region: no-drag;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.note__close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+}
+
+.note__content {
+  flex: 1;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  outline: none;
+  white-space: pre-wrap;
+}
+
+.note__content:empty::before {
+  content: 'Start typing your note...';
+  color: var(--text-secondary);
+}
+
+.note__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  gap: 12px;
+}
+
+.note__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  -webkit-app-region: no-drag;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.button--secondary {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.note__meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.note__tasks {
+  font-weight: 500;
+}
+
+.note__status {
+  font-family: 'JetBrains Mono', monospace;
+}
