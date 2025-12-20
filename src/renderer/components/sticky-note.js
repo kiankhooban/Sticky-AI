@@ -12,7 +12,7 @@ const sanitizeText = (value) => {
   if (typeof value !== 'string') {
     return '';
   }
-  return value.replace(/\r\n/g, '\n');
+  return value.replace(/\r\n|\r/g, '\n').trim();
 };
 
 export const setupStickyNote = ({
@@ -38,7 +38,12 @@ export const setupStickyNote = ({
     updateStatus('Saving...');
     const content = sanitizeText(contentElement.innerText);
     const result = await onSave({ content });
-    updateStatus(result.ok ? 'Saved' : 'Save failed');
+    if (result.ok) {
+      updateStatus('Saved');
+      setTimeout(() => updateStatus(''), 2000);
+    } else {
+      updateStatus('Save failed');
+    }
   }, 500);
 
   contentElement.addEventListener('input', () => {

@@ -1,5 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@font-face {
+  font-family: 'Offbit';
+  src: url('../../assets/fonts/offbit/OffBit-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Offbit';
+  src: url('../../assets/fonts/offbit/OffBit-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Wagon';
+  src:
+    url('../../assets/fonts/Wagon Free Personal Use/Wagon-ExtraLight.otf')
+      format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Wagon';
+  src: url('../../assets/fonts/Wagon Free Personal Use/Wagon-Bold.otf')
+    format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --note-bg: #fff9c4;
@@ -19,7 +51,7 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text-primary);
   background: radial-gradient(circle at top right, #fff2a6, var(--note-bg));
   height: 100vh;
@@ -29,11 +61,20 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 0 16px 16px;
-  background: linear-gradient(135deg, rgba(255, 249, 196, 0.95), #fff3b0);
-  box-shadow: 0 4px 12px var(--note-shadow), 0 2px 4px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 249, 196, 0.7),
+    rgba(255, 243, 176, 0.6)
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .note__titlebar {
@@ -50,17 +91,21 @@ body {
   gap: 6px;
   font-weight: 600;
   letter-spacing: 0.5px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .note__title-primary {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-family: 'Offbit', sans-serif;
+  font-size: 18px;
+  text-transform: uppercase;
 }
 
 .note__title-secondary {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-family: 'Wagon', sans-serif;
+  font-size: 18px;
   color: var(--ai-text);
+  font-weight: 700;
 }
 
 .note__close {
@@ -85,11 +130,23 @@ body {
   padding: 12px;
   font-size: 14px;
   line-height: 1.6;
-  border-radius: 8px;
-  background: var(--surface);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(255, 255, 255, 0.5);
   outline: none;
   white-space: pre-wrap;
+  transition: all 0.2s ease;
+}
+
+.note__content:focus {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.05),
+    0 2px 8px rgba(245, 158, 11, 0.2);
 }
 
 .note__content:empty::before {
@@ -143,5 +200,5 @@ body {
 }
 
 .note__status {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }

@@ -9,6 +9,11 @@ const safeApiCall = async (fn, fallback) => {
   }
 };
 
+const getNoteIdFromQuery = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('noteId');
+};
+
 const main = async () => {
   const contentElement = document.querySelector('.note__content');
   const closeButton = document.querySelector('.note__close');
@@ -20,12 +25,17 @@ const main = async () => {
     analyze: document.querySelector('[data-action="analyze"]')
   };
 
+  const noteId = getNoteIdFromQuery();
+  if (!noteId) {
+    statusElement.textContent = 'Missing note id';
+    return;
+  }
+
   const noteData = await safeApiCall(
-    () => window.stickyAPI.loadNote(),
-    { noteId: 'default-note', content: '', tasks: [] }
+    () => window.stickyAPI.loadNote(noteId),
+    { ok: false, noteId, content: '', tasks: [] }
   );
 
-  let noteId = noteData.noteId;
   let tasks = Array.isArray(noteData.tasks) ? noteData.tasks : [];
 
   const stickyNote = setupStickyNote({
@@ -36,7 +46,7 @@ const main = async () => {
     statusElement,
     onSave: async ({ content }) => {
       const response = await safeApiCall(
-        () => window.stickyAPI.saveNote({ noteId, content, tasks }),
+        () => window.stickyAPI.saveNote({ noteId, content }),
         { ok: false }
       );
       return response;
@@ -56,8 +66,29 @@ const main = async () => {
     }
   });
 
-  stickyNote.setContent(noteData.content || '');
+  if (noteData.ok) {
+    stickyNote.setContent(noteData.content || '');
+  }
   stickyNote.setTasks(tasks);
+
+  window.stickyAPI.onTasksSync((payload) => {
+    if (!payload || payload.noteId !== noteId) {
+      return;
+    }
+    tasks = Array.isArray(payload.tasks) ? payload.tasks : [];
+    stickyNote.setTasks(tasks);
+  });
+
+  window.stickyAPI.onTaskUpdated((payload) => {
+    if (!payload || payload.noteId !== noteId) {
+      return;
+    }
+    if (!tasks[payload.taskIndex]) {
+      return;
+    }
+    tasks[payload.taskIndex].completed = payload.completed;
+    stickyNote.setTasks(tasks);
+  });
 };
 
 window.addEventListener('DOMContentLoaded', main);
