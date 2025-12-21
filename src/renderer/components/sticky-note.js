@@ -19,19 +19,13 @@ export const setupStickyNote = ({
   contentElement,
   closeButton,
   actionButtons,
-  taskCountElement,
   statusElement,
   onSave,
   onNewNote,
-  onAnalyze
+  onDelete
 }) => {
   const updateStatus = (message) => {
     statusElement.textContent = message;
-  };
-
-  const updateTaskCount = (tasks) => {
-    const count = tasks.length;
-    taskCountElement.textContent = `${count} task${count === 1 ? '' : 's'}`;
   };
 
   const debouncedSave = debounce(async () => {
@@ -51,18 +45,16 @@ export const setupStickyNote = ({
   });
 
   closeButton.addEventListener('click', () => {
-    window.close();
+    onDelete();
   });
 
-  actionButtons.new.addEventListener('click', () => onNewNote());
-  actionButtons.analyze.addEventListener('click', () => onAnalyze());
+  if (actionButtons.new) {
+    actionButtons.new.addEventListener('click', () => onNewNote());
+  }
 
   return {
     setContent: (content) => {
       contentElement.innerText = sanitizeText(content);
-    },
-    setTasks: (tasks) => {
-      updateTaskCount(tasks);
     },
     setStatus: updateStatus
   };

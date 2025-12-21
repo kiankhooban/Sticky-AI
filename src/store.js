@@ -134,8 +134,13 @@ const createNote = () => {
  */
 const deleteNote = (noteId) => {
   const notes = safeGetNotes();
-  const updatedNotes = notes.filter((note) => note.id !== noteId);
-  return safeSetNotes(updatedNotes);
+  const filtered = notes.filter((note) => note.id !== noteId);
+
+  if (filtered.length === 0) {
+    throw new Error('Cannot delete the last note');
+  }
+
+  return safeSetNotes(filtered);
 };
 
 /**
@@ -144,78 +149,6 @@ const deleteNote = (noteId) => {
  */
 const getRecentNotes = (limit) => {
   return getAllNotes().slice(0, limit);
-};
-
-const normalizeLineEndings = (value) => {
-  if (typeof value !== 'string') {
-    return '';
-  }
-  return value.replace(/\r\n|\r/g, '\n');
-};
-
-/**
- * @param {string} content
- * @returns {Array}
- */
-const detectTasks = (content) => {
-  try {
-    const lines = normalizeLineEndings(content).split('\n');
-    const tasks = [];
-
-    lines.forEach((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) {
-        return;
-      }
-
-      const checkboxMatch = trimmed.match(/^\[([x\s])\]\s*(.+)/i);
-      if (checkboxMatch) {
-        tasks.push({
-          text: checkboxMatch[2].trim(),
-          completed: checkboxMatch[1].toLowerCase() === 'x',
-          aiGenerated: false
-        });
-        return;
-      }
-
-      if (/^[-*•]\s+.+/.test(trimmed)) {
-        tasks.push({
-          text: trimmed.replace(/^[-*•]\s+/, '').trim(),
-          completed: false,
-          aiGenerated: false
-        });
-        return;
-      }
-
-      const numberedMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
-      if (numberedMatch) {
-        tasks.push({
-          text: numberedMatch[1].trim(),
-          completed: false,
-          aiGenerated: false
-        });
-      }
-    });
-
-    return tasks;
-  } catch (error) {
-    console.error('Failed to detect tasks:', error);
-    return [];
-  }
-};
-
-const mergeTaskCompletion = (existingTasks, detectedTasks) => {
-  const existingMap = new Map();
-  existingTasks.forEach((task) => {
-    existingMap.set(task.text.toLowerCase(), task.completed);
-  });
-
-  return detectedTasks.map((task) => ({
-    ...task,
-    completed: existingMap.has(task.text.toLowerCase())
-      ? existingMap.get(task.text.toLowerCase())
-      : task.completed
-  }));
 };
 
 /**
@@ -230,13 +163,10 @@ const saveNoteContent = (noteId, content, bounds) => {
     return { ok: false, error: 'Note not found.' };
   }
 
-  const detected = detectTasks(content);
-  const tasks = mergeTaskCompletion(note.tasks || [], detected);
-
   const updatedNote = {
     ...note,
     content: typeof content === 'string' ? content : note.content,
-    tasks,
+    tasks: Array.isArray(note.tasks) ? note.tasks : [],
     bounds: bounds || note.bounds,
     updatedAt: Date.now()
   };
@@ -267,31 +197,6 @@ const updateNote = (noteId, updates) => {
 };
 
 /**
- * @param {string} noteId
- * @param {number} taskIndex
- * @param {boolean | undefined} completed
- * @returns {object | null}
- */
-const toggleTask = (noteId, taskIndex, completed) => {
-  const note = getNoteById(noteId);
-  if (!note || !note.tasks || !note.tasks[taskIndex]) {
-    return null;
-  }
-
-  const task = note.tasks[taskIndex];
-  task.completed = typeof completed === 'boolean' ? completed : !task.completed;
-
-  const updatedNote = {
-    ...note,
-    tasks: [...note.tasks],
-    updatedAt: Date.now()
-  };
-
-  upsertNote(updatedNote);
-  return task;
-};
-
-/**
  * @returns {Array}
  */
 const getAllTasks = () => {
@@ -305,7 +210,7 @@ const getAllTasks = () => {
           ...task,
           noteId: note.id,
           taskIndex: index,
-          notePreview: (note.content || '').replace(/\n/g, ' ').slice(0, 50)
+          notePreview: note.content ? note.content.substring(0, 50).trim() : 'Empty Note'
         });
       });
     }
@@ -314,10 +219,28 @@ const getAllTasks = () => {
   return allTasks;
 };
 
+/**
+ * @param {string} noteId
+ * @param {number} taskIndex
+ * @param {boolean} completed
+ * @returns {object}
+ */
+const toggleTask = (noteId, taskIndex, completed) => {
+  const note = getNoteById(noteId);
+  if (!note || !note.tasks || !note.tasks[taskIndex]) {
+    throw new Error('Task not found');
+  }
+
+  note.tasks[taskIndex].completed = completed;
+  note.updatedAt = Date.now();
+
+  upsertNote(note);
+  return note.tasks[taskIndex];
+};
+
 module.exports = {
   createNote,
   deleteNote,
-  detectTasks,
   getAllNotes,
   getAllTasks,
   getNoteById,

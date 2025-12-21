@@ -1,5 +1,5 @@
 const path = require('path');
-const { app, ipcMain, nativeTheme, globalShortcut } = require('electron');
+const { app, dialog, ipcMain, nativeTheme, globalShortcut } = require('electron');
 const {
   createNote,
   deleteNote,
@@ -26,11 +26,16 @@ if (process.env.ELECTRON_RUN_AS_NODE) {
   );
 }
 
-const refreshTaskState = () => {
-  const tasks = getAllTasks();
-  if (menuBar) {
-    menuBar.updateTaskCount(tasks.length);
-    menuBar.sendToDropdown('tasks:sync', { tasks });
+const createNoteWindowSafe = (noteId, bounds) => {
+  try {
+    const window = windowManager.createNoteWindow(noteId, bounds);
+    if (!window) {
+      return { ok: false, error: 'Maximum number of notes reached.' };
+    }
+    return { ok: true, window };
+  } catch (error) {
+    console.error('Failed to create note window:', error);
+    return { ok: false, error: 'Unable to create note window.' };
   }
 };
 
@@ -47,20 +52,50 @@ const createNewNote = () => {
 
   result.window.show();
   result.window.focus();
-  refreshTaskState();
+  if (menuBar) {
+    menuBar.updateMenu();
+  }
   return { ok: true, noteId: note.id };
 };
 
-const createNoteWindowSafe = (noteId, bounds) => {
+const handleDeleteNote = async (noteId, parentWindow) => {
+  const allNotes = getAllNotes();
+  if (allNotes.length <= 1) {
+    await dialog.showMessageBox(parentWindow, {
+      type: 'info',
+      buttons: ['OK'],
+      defaultId: 0,
+      title: 'Delete Note',
+      message: 'You must keep at least one note.'
+    });
+    return { ok: false, error: 'Cannot delete the last note' };
+  }
+
+  const result = await dialog.showMessageBox(parentWindow, {
+    type: 'warning',
+    buttons: ['Delete', 'Cancel'],
+    defaultId: 1,
+    title: 'Delete Note',
+    message: 'Are you sure you want to delete this note?',
+    detail: 'This action cannot be undone.'
+  });
+
+  if (result.response !== 0) {
+    return { ok: false, error: 'Delete canceled' };
+  }
+
   try {
-    const window = windowManager.createNoteWindow(noteId, bounds);
-    if (!window) {
-      return { ok: false, error: 'Maximum number of notes reached.' };
+    deleteNote(noteId);
+    const window = windowManager.getNoteWindow(noteId);
+    if (window) {
+      window.destroy();
     }
-    return { ok: true, window };
+    if (menuBar) {
+      menuBar.updateMenu();
+    }
+    return { ok: true };
   } catch (error) {
-    console.error('Failed to create note window:', error);
-    return { ok: false, error: 'Unable to create note window.' };
+    return { ok: false, error: error.message };
   }
 };
 
@@ -85,12 +120,8 @@ const setupIpc = () => {
     }
 
     const result = saveNoteContent(payload.noteId, payload.content, payload.bounds);
-    if (result.ok && result.note) {
-      windowManager.broadcastToAll('tasks:sync', {
-        noteId: result.note.id,
-        tasks: result.note.tasks
-      });
-      refreshTaskState();
+    if (result.ok && menuBar) {
+      menuBar.updateMenu();
     }
 
     return result;
@@ -100,16 +131,14 @@ const setupIpc = () => {
     return createNewNote();
   });
 
-  ipcMain.handle('note:delete', (_event, payload) => {
+  ipcMain.handle('note:delete', async (_event, payload) => {
     const noteId = payload && payload.noteId;
     if (!noteId) {
       return { ok: false, error: 'Note id required.' };
     }
 
-    windowManager.closeNoteWindow(noteId);
-    deleteNote(noteId);
-    refreshTaskState();
-    return { ok: true };
+    const window = windowManager.getNoteWindow(noteId);
+    return handleDeleteNote(noteId, window);
   });
 
   ipcMain.handle('note:focus', (_event, payload) => {
@@ -131,8 +160,18 @@ const setupIpc = () => {
     return { ok: true };
   });
 
+  ipcMain.handle('app:quit', () => {
+    app.quit();
+    return { ok: true };
+  });
+
   ipcMain.handle('tasks:get-all', () => {
-    return { ok: true, tasks: getAllTasks() };
+    try {
+      return { ok: true, tasks: getAllTasks() };
+    } catch (error) {
+      console.error('Failed to get all tasks:', error);
+      return { ok: false, error: 'Unable to fetch tasks.' };
+    }
   });
 
   ipcMain.handle('task:toggle', (_event, payload) => {
@@ -140,33 +179,25 @@ const setupIpc = () => {
       return { ok: false, error: 'Invalid task payload.' };
     }
 
-    const task = toggleTask(payload.noteId, payload.taskIndex, payload.completed);
-    if (!task) {
-      return { ok: false, error: 'Task not found.' };
+    try {
+      const task = toggleTask(payload.noteId, payload.taskIndex, payload.completed);
+      windowManager.broadcastToAll('task:updated', {
+        noteId: payload.noteId,
+        taskIndex: payload.taskIndex,
+        completed: task.completed
+      });
+      return { ok: true, task };
+    } catch (error) {
+      console.error('Failed to toggle task:', error);
+      return { ok: false, error: error.message };
     }
-
-    windowManager.broadcastToAll('task:updated', {
-      noteId: payload.noteId,
-      taskIndex: payload.taskIndex,
-      completed: task.completed
-    });
-    refreshTaskState();
-
-    return { ok: true, task };
-  });
-
-  ipcMain.handle('app:quit', () => {
-    app.quit();
-    return { ok: true };
   });
 };
 
 const setupMenuBar = () => {
   menuBar = createMenuBar({
-    preloadPath: path.join(__dirname, 'preload.js'),
-    onQuit: () => app.quit()
+    preloadPath: path.join(__dirname, 'preload.js')
   });
-  refreshTaskState();
 };
 
 const setupDevReload = () => {
@@ -186,12 +217,6 @@ const setupShortcuts = () => {
   globalShortcut.register('CommandOrControl+N', () => {
     createNewNote();
   });
-
-  globalShortcut.register('CommandOrControl+Shift+A', () => {
-    if (menuBar) {
-      menuBar.toggleDropdown();
-    }
-  });
 };
 
 const restoreNotes = () => {
@@ -210,16 +235,13 @@ app.on('before-quit', () => {
     windowManager.setQuitting(true);
     windowManager.destroyAll();
   }
-  if (menuBar) {
-    menuBar.closeDropdown();
-  }
 });
 
 app.on('ready', () => {
   if (app.dock) {
     app.dock.hide();
   }
-  nativeTheme.themeSource = 'light';
+  nativeTheme.themeSource = 'dark';
 
   windowManager = new WindowManager({
     preloadPath: path.join(__dirname, 'preload.js'),

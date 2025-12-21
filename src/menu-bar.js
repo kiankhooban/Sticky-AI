@@ -12,13 +12,37 @@ const FALLBACK_ICON =
   );
 
 const loadTrayIcon = () => {
-  const iconPath = path.join(__dirname, '..', 'assets', 'icons', 'menubar-icon.png');
+  const iconPath = path.join(__dirname, '..', 'assets', 'icons', 'Sticky AI menubar logo.svg');
   if (fs.existsSync(iconPath)) {
     const image = nativeImage.createFromPath(iconPath);
     const { width, height } = image.getSize();
-    if (width >= 8 && height >= 8) {
-      image.setTemplateImage(true);
-      return image;
+    if (!image.isEmpty() && width >= 8 && height >= 8) {
+      const resized = image.resize({ width: 16, height: 16 });
+      resized.setTemplateImage(true);
+      return resized;
+    }
+
+    try {
+      const svg = fs.readFileSync(iconPath, 'utf8');
+      const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      const fallbackSvg = nativeImage.createFromDataURL(dataUrl);
+      if (!fallbackSvg.isEmpty()) {
+        const resized = fallbackSvg.resize({ width: 16, height: 16 });
+        resized.setTemplateImage(true);
+        return resized;
+      }
+    } catch (error) {
+      console.warn('Failed to load SVG tray icon:', error.message);
+    }
+  }
+
+  const pngFallback = path.join(__dirname, '..', 'assets', 'icons', 'Sticky AI menu bar logo.png');
+  if (fs.existsSync(pngFallback)) {
+    const image = nativeImage.createFromPath(pngFallback);
+    if (!image.isEmpty()) {
+      const resized = image.resize({ width: 16, height: 16 });
+      resized.setTemplateImage(true);
+      return resized;
     }
   }
 
@@ -27,28 +51,24 @@ const loadTrayIcon = () => {
   return image;
 };
 
-const createMenuBar = ({ preloadPath, onQuit }) => {
-  if (typeof onQuit !== 'function') {
-    throw new Error('createMenuBar: onQuit must be a function');
-  }
-
-  let dropdownWindow = null;
+const createMenuBar = ({ preloadPath }) => {
+  let popoverWindow = null;
   let positioner = null;
 
   const tray = new Tray(loadTrayIcon());
   tray.setToolTip('Sticky AI');
 
-  const createDropdownWindow = () => {
-    dropdownWindow = new BrowserWindow({
-      width: 320,
-      height: 500,
-      resizable: false,
+  const createPopover = () => {
+    popoverWindow = new BrowserWindow({
+      width: 280,
+      height: 400,
+      maxHeight: 500,
       frame: false,
       transparent: true,
-      backgroundColor: '#00000000',
-      alwaysOnTop: true,
+      resizable: false,
       skipTaskbar: true,
-      vibrancy: 'popover',
+      alwaysOnTop: true,
+      show: false,
       webPreferences: {
         preload: preloadPath,
         contextIsolation: true,
@@ -57,73 +77,48 @@ const createMenuBar = ({ preloadPath, onQuit }) => {
       }
     });
 
-    dropdownWindow.loadFile(path.join(__dirname, 'renderer', 'dropdown.html'));
-    positioner = new Positioner(dropdownWindow);
+    popoverWindow.loadFile(path.join(__dirname, 'renderer', 'popover.html'));
+    positioner = new Positioner(popoverWindow);
 
-    dropdownWindow.on('blur', () => {
-      if (dropdownWindow && dropdownWindow.isVisible()) {
-        dropdownWindow.hide();
+    popoverWindow.on('blur', () => {
+      if (popoverWindow && !popoverWindow.isDestroyed()) {
+        popoverWindow.hide();
       }
     });
 
-    dropdownWindow.on('closed', () => {
-      dropdownWindow = null;
+    popoverWindow.on('closed', () => {
+      popoverWindow = null;
       positioner = null;
     });
+
+    return popoverWindow;
   };
 
-  const positionDropdown = () => {
-    if (!dropdownWindow || !positioner) {
+  const togglePopover = () => {
+    if (!popoverWindow || popoverWindow.isDestroyed()) {
+      createPopover();
+    }
+
+    if (!popoverWindow || !positioner) {
       return;
     }
 
-    positioner.move('trayBottomCenter', tray.getBounds(), { x: 0, y: 8 });
-  };
-
-  const toggleDropdown = () => {
-    if (!dropdownWindow) {
-      createDropdownWindow();
-    }
-
-    if (!dropdownWindow) {
+    if (popoverWindow.isVisible()) {
+      popoverWindow.hide();
       return;
     }
 
-    if (dropdownWindow.isVisible()) {
-      dropdownWindow.hide();
-    } else {
-      positionDropdown();
-      dropdownWindow.show();
-      dropdownWindow.focus();
-    }
+    positioner.move('trayCenter', tray.getBounds());
+    popoverWindow.show();
+    popoverWindow.focus();
   };
 
-  const updateTaskCount = (count) => {
-    if (process.platform === 'darwin') {
-      tray.setTitle(count > 0 ? `${count}` : '');
-    }
-  };
-
-  const sendToDropdown = (channel, payload) => {
-    if (dropdownWindow && !dropdownWindow.isDestroyed()) {
-      dropdownWindow.webContents.send(channel, payload);
-    }
-  };
-
-  tray.on('click', () => toggleDropdown());
-  tray.on('right-click', () => toggleDropdown());
+  tray.on('click', () => togglePopover());
+  tray.on('right-click', () => togglePopover());
 
   return {
     tray,
-    toggleDropdown,
-    updateTaskCount,
-    sendToDropdown,
-    closeDropdown: () => {
-      if (dropdownWindow && !dropdownWindow.isDestroyed()) {
-        dropdownWindow.close();
-      }
-    },
-    onQuit
+    togglePopover
   };
 };
 

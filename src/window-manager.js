@@ -1,4 +1,3 @@
-const path = require('path');
 const { BrowserWindow } = require('electron');
 
 const debounce = (fn, delay) => {
@@ -44,14 +43,16 @@ class WindowManager {
 
     const options = {
       width: 320,
-      height: 260,
-      minWidth: 250,
-      minHeight: 200,
+      height: 400,
+      minWidth: 280,
+      minHeight: 300,
       alwaysOnTop: true,
       frame: false,
-      title: 'Sticky AI',
-      backgroundColor: '#00000000',
       transparent: true,
+      backgroundColor: '#00000000',
+      vibrancy: 'under-window',
+      visualEffectState: 'active',
+      titleBarStyle: 'hidden',
       webPreferences: {
         preload: this.preloadPath,
         contextIsolation: true,
