@@ -10,7 +10,7 @@ const {
   toggleTask,
   updateNote
 } = require('./store');
-const { createMenuBar } = require('./menu-bar');
+const { createMenuBar, updateMenuBar } = require('./menu-bar');
 const { WindowManager } = require('./window-manager');
 
 const MAX_NOTES = 20;
@@ -18,6 +18,17 @@ const MAX_NOTES = 20;
 let windowManager = null;
 let menuBar = null;
 let isQuitting = false;
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+}
+
+app.on('second-instance', () => {
+  if (windowManager) {
+    windowManager.showAllNotes();
+  }
+});
 
 if (process.env.ELECTRON_RUN_AS_NODE) {
   console.warn(
@@ -52,9 +63,7 @@ const createNewNote = () => {
 
   result.window.show();
   result.window.focus();
-  if (menuBar) {
-    menuBar.updateMenu();
-  }
+  updateMenuBar();
   return { ok: true, noteId: note.id };
 };
 
@@ -90,9 +99,7 @@ const handleDeleteNote = async (noteId, parentWindow) => {
     if (window) {
       window.destroy();
     }
-    if (menuBar) {
-      menuBar.updateMenu();
-    }
+    updateMenuBar();
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error.message };
@@ -120,8 +127,8 @@ const setupIpc = () => {
     }
 
     const result = saveNoteContent(payload.noteId, payload.content, payload.bounds);
-    if (result.ok && menuBar) {
-      menuBar.updateMenu();
+    if (result.ok) {
+      updateMenuBar();
     }
 
     return result;
@@ -155,14 +162,28 @@ const setupIpc = () => {
     return { ok: true, notes: getAllNotes() };
   });
 
-  ipcMain.handle('notes:open-all', () => {
-    windowManager.showAllNotes();
-    return { ok: true };
+  ipcMain.handle('notes:show-all', async () => {
+    try {
+      const allNotes = getAllNotes();
+      allNotes.forEach((note) => {
+        let window = windowManager.getNoteWindow(note.id);
+        if (!window || window.isDestroyed()) {
+          window = windowManager.createNoteWindow(note.id, note.bounds || null);
+        }
+        if (window) {
+          window.show();
+          window.focus();
+        }
+      });
+      return { ok: true };
+    } catch (error) {
+      console.error('Failed to show all notes:', error);
+      return { ok: false, error: error.message };
+    }
   });
 
-  ipcMain.handle('app:quit', () => {
+  ipcMain.on('app:quit', () => {
     app.quit();
-    return { ok: true };
   });
 
   ipcMain.handle('tasks:get-all', () => {
@@ -186,6 +207,7 @@ const setupIpc = () => {
         taskIndex: payload.taskIndex,
         completed: task.completed
       });
+      updateMenuBar();
       return { ok: true, task };
     } catch (error) {
       console.error('Failed to toggle task:', error);

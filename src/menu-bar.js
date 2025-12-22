@@ -11,6 +11,9 @@ const FALLBACK_ICON =
     '</svg>'
   );
 
+let tray = null;
+let menuWindow = null;
+
 const loadTrayIcon = () => {
   const iconPath = path.join(__dirname, '..', 'assets', 'icons', 'Sticky AI menubar logo.svg');
   if (fs.existsSync(iconPath)) {
@@ -51,77 +54,98 @@ const loadTrayIcon = () => {
   return image;
 };
 
-const createMenuBar = ({ preloadPath }) => {
-  let popoverWindow = null;
-  let positioner = null;
+const createMenuWindow = (preloadPath) => {
+  menuWindow = new BrowserWindow({
+    width: 256,
+    height: 600,
+    show: false,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    webPreferences: {
+      preload: preloadPath,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  });
 
-  const tray = new Tray(loadTrayIcon());
+  menuWindow.loadFile(path.join(__dirname, 'renderer', 'menubar.html'));
+
+  menuWindow.on('blur', () => {
+    if (menuWindow && !menuWindow.isDestroyed()) {
+      menuWindow.hide();
+    }
+  });
+
+  return menuWindow;
+};
+
+const positionMenuWindow = (trayBounds) => {
+  if (!menuWindow || menuWindow.isDestroyed()) {
+    return;
+  }
+
+  const positioner = new Positioner(menuWindow);
+  positioner.move('trayCenter', trayBounds);
+
+  const [x, y] = menuWindow.getPosition();
+  menuWindow.setPosition(x, y + 4);
+};
+
+const toggleMenu = (preloadPath) => {
+  if (!menuWindow || menuWindow.isDestroyed()) {
+    menuWindow = createMenuWindow(preloadPath);
+  }
+
+  if (menuWindow.isVisible()) {
+    menuWindow.hide();
+  } else {
+    positionMenuWindow(tray.getBounds());
+    menuWindow.show();
+    menuWindow.focus();
+    menuWindow.webContents.reloadIgnoringCache();
+  }
+};
+
+const createMenuBar = ({ preloadPath }) => {
+  if (menuWindow && !menuWindow.isDestroyed()) {
+    menuWindow.destroy();
+    menuWindow = null;
+  }
+
+  if (tray && !tray.isDestroyed()) {
+    tray.destroy();
+    tray = null;
+  }
+
+  tray = new Tray(loadTrayIcon());
   tray.setToolTip('Sticky AI');
 
-  const createPopover = () => {
-    popoverWindow = new BrowserWindow({
-      width: 280,
-      height: 400,
-      maxHeight: 500,
-      frame: false,
-      transparent: true,
-      resizable: false,
-      skipTaskbar: true,
-      alwaysOnTop: true,
-      show: false,
-      webPreferences: {
-        preload: preloadPath,
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: false
-      }
-    });
+  tray.on('click', () => toggleMenu(preloadPath));
+  tray.on('right-click', () => toggleMenu(preloadPath));
 
-    popoverWindow.loadFile(path.join(__dirname, 'renderer', 'popover.html'));
-    positioner = new Positioner(popoverWindow);
-
-    popoverWindow.on('blur', () => {
-      if (popoverWindow && !popoverWindow.isDestroyed()) {
-        popoverWindow.hide();
-      }
-    });
-
-    popoverWindow.on('closed', () => {
-      popoverWindow = null;
-      positioner = null;
-    });
-
-    return popoverWindow;
-  };
-
-  const togglePopover = () => {
-    if (!popoverWindow || popoverWindow.isDestroyed()) {
-      createPopover();
-    }
-
-    if (!popoverWindow || !positioner) {
-      return;
-    }
-
-    if (popoverWindow.isVisible()) {
-      popoverWindow.hide();
-      return;
-    }
-
-    positioner.move('trayCenter', tray.getBounds());
-    popoverWindow.show();
-    popoverWindow.focus();
-  };
-
-  tray.on('click', () => togglePopover());
-  tray.on('right-click', () => togglePopover());
+  menuWindow = createMenuWindow(preloadPath);
 
   return {
     tray,
-    togglePopover
+    toggleMenu: () => toggleMenu(preloadPath)
   };
 };
 
+const updateMenuBar = () => {
+  if (menuWindow && !menuWindow.isDestroyed() && menuWindow.isVisible()) {
+    menuWindow.webContents.reloadIgnoringCache();
+  }
+};
+
 module.exports = {
-  createMenuBar
+  createMenuBar,
+  updateMenuBar
 };

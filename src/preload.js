@@ -9,6 +9,6 @@ contextBridge.exposeInMainWorld('stickyAPI', {
   getAllNotes: () => ipcRenderer.invoke('notes:get-all'),
   getAllTasks: () => ipcRenderer.invoke('tasks:get-all'),
   toggleTask: (payload) => ipcRenderer.invoke('task:toggle', payload),
-  showAllNotes: () => ipcRenderer.invoke('notes:open-all'),
-  quitApp: () => ipcRenderer.invoke('app:quit')
+  showAllNotes: () => ipcRenderer.invoke('notes:show-all'),
+  quitApp: () => ipcRenderer.send('app:quit')
 });

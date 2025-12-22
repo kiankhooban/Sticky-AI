@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sticky AI Menu</title>
+    <link rel="stylesheet" href="menubar.css" />
+  </head>
+  <body>
+    <div class="menubar-dropdown">
+      <div class="menubar-dropdown__header">
+        <span class="menubar-dropdown__title">TASKS</span>
+        <span class="menubar-dropdown__count" data-count>0</span>
+      </div>
+
+      <div class="menubar-dropdown__separator"></div>
+
+      <div
+        class="menubar-dropdown__section menubar-dropdown__section--scrollable"
+        data-tasks-section
+      >
+        <div class="menubar-dropdown__empty" data-empty style="display: none;">
+          <span class="menubar-dropdown__empty-text">No tasks yet</span>
+          <span class="menubar-dropdown__empty-hint">Create notes and analyze with AI</span>
+        </div>
+      </div>
+
+      <div class="menubar-dropdown__separator"></div>
+
+      <div class="menubar-dropdown__section">
+        <div class="menubar-dropdown__item" data-action="show-all">
+          <span class="menubar-dropdown__text">Show All Notes</span>
+        </div>
+
+        <div class="menubar-dropdown__item" data-action="new">
+          <span class="menubar-dropdown__text">New Note</span>
+          <span class="menubar-dropdown__shortcut">⌘N</span>
+        </div>
+      </div>
+
+      <div class="menubar-dropdown__separator"></div>
+
+      <div class="menubar-dropdown__section">
+        <div class="menubar-dropdown__item" data-action="quit">
+          <span class="menubar-dropdown__text">Quit Sticky AI</span>
+          <span class="menubar-dropdown__shortcut">⌘Q</span>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="menubar.js"></script>
+  </body>
+</html>

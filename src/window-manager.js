@@ -50,9 +50,11 @@ class WindowManager {
       frame: false,
       transparent: true,
       backgroundColor: '#00000000',
-      vibrancy: 'under-window',
+      vibrancy: 'sidebar',
       visualEffectState: 'active',
       titleBarStyle: 'hidden',
+      hasShadow: true,
+      roundedCorners: true,
       webPreferences: {
         preload: this.preloadPath,
         contextIsolation: true,

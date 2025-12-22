@@ -9,30 +9,108 @@
   <body>
     <main class="note">
       <header class="note__titlebar" data-drag-region>
-        <div class="note__title">
-          <span class="note__title-primary">Sticky</span>
-          <span class="note__title-secondary">AI</span>
+        <div class="note__titlebar-left"></div>
+        <div class="note__titlebar-center">
+          <img src="../../assets/images/Sticky Ai title logo.svg" alt="Sticky AI" class="note__logo" />
         </div>
-        <button class="note__close" type="button" aria-label="Close note">
-          ✕
-        </button>
+        <div class="note__titlebar-right">
+          <button
+            class="note__action-btn"
+            type="button"
+            data-action="tasks"
+            aria-label="Show tasks panel"
+            title="Tasks Panel"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M3 5.5h10M3 8h10M3 10.5h10"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+          <button
+            class="note__action-btn"
+            type="button"
+            data-action="new"
+            aria-label="New note"
+            title="New Note (⌘N)"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M8 3v10M3 8h10"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+          <button class="note__close" type="button" aria-label="Close note">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <path
+                d="M2 2l8 8M10 2l-8 8"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
       </header>
 
       <section class="note__content" contenteditable="true" spellcheck="true"></section>
 
       <footer class="note__toolbar">
-        <div class="note__actions">
-          <button class="button" type="button" data-action="new">New Note</button>
-          <button class="button button--secondary" type="button" data-action="analyze">
-            AI Analyze
-          </button>
-        </div>
         <div class="note__meta">
-          <span class="note__tasks" data-task-count>0 tasks</span>
           <span class="note__status" data-status>Saved</span>
         </div>
       </footer>
     </main>
+
+    <aside class="task-panel" data-task-panel>
+      <header class="task-panel__header">
+        <h2 class="task-panel__title">All Tasks</h2>
+        <button class="task-panel__close" type="button" data-action="close-panel">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M12 4L4 12M4 4l8 8"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <div class="task-panel__content">
+        <div class="task-panel__loading" data-loading>
+          <div class="spinner"></div>
+          <p>Loading tasks...</p>
+        </div>
+
+        <div class="task-panel__empty" data-empty style="display: none;">
+          <div class="task-panel__empty-icon">AI</div>
+          <h3>No Tasks Yet</h3>
+          <p>Tasks will appear here after AI analysis</p>
+          <small>Phase 3 feature coming soon</small>
+        </div>
+
+        <div class="task-panel__list" data-task-list style="display: none;"></div>
+      </div>
+
+      <footer class="task-panel__footer">
+        <button
+          class="button button--secondary"
+          type="button"
+          data-action="ai-analyze-all"
+        >
+          Analyze All Notes
+        </button>
+      </footer>
+    </aside>
+
+    <div class="task-panel-overlay" data-overlay style="display: none;"></div>
 
     <script type="module" src="renderer.js"></script>
   </body>
