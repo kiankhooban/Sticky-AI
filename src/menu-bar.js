@@ -15,7 +15,7 @@ let tray = null;
 let menuWindow = null;
 
 const loadTrayIcon = () => {
-  const iconPath = path.join(__dirname, '..', 'assets', 'icons', 'Sticky AI menubar logo.svg');
+  const iconPath = path.join(__dirname, '..', 'assets', 'images', 'menubar-logo.svg');
   if (fs.existsSync(iconPath)) {
     const image = nativeImage.createFromPath(iconPath);
     const { width, height } = image.getSize();
@@ -39,7 +39,7 @@ const loadTrayIcon = () => {
     }
   }
 
-  const pngFallback = path.join(__dirname, '..', 'assets', 'icons', 'Sticky AI menu bar logo.png');
+  const pngFallback = path.join(__dirname, '..', 'assets', 'images', 'menubar-logo.png');
   if (fs.existsSync(pngFallback)) {
     const image = nativeImage.createFromPath(pngFallback);
     if (!image.isEmpty()) {
