@@ -1,5 +1,7 @@
+require('dotenv').config();
+
 const path = require('path');
-const { app, dialog, ipcMain, nativeTheme, globalShortcut } = require('electron');
+const { app, dialog, ipcMain, nativeTheme, globalShortcut, BrowserWindow } = require('electron');
 const {
   createNote,
   deleteNote,
@@ -12,6 +14,7 @@ const {
 } = require('./store');
 const { createMenuBar, updateMenuBar } = require('./menu-bar');
 const { WindowManager } = require('./window-manager');
+const { analyzeNote, analyzeAllNotes } = require('./ai/analyzer');
 
 const MAX_NOTES = 20;
 
@@ -212,6 +215,48 @@ const setupIpc = () => {
     } catch (error) {
       console.error('Failed to toggle task:', error);
       return { ok: false, error: error.message };
+    }
+  });
+
+  // AI Analysis IPC Handlers with streaming support
+  ipcMain.handle('ai:analyze-note', async (_event, payload) => {
+    if (!payload || !payload.noteId) {
+      return { ok: false, error: 'Note ID required.' };
+    }
+
+    try {
+      const result = await analyzeNote(payload.noteId, (noteId, partialTasks) => {
+        // Send streaming updates as tasks are detected
+        BrowserWindow.getAllWindows().forEach(win => {
+          win.webContents.send('tasks:streaming', { 
+            noteId, 
+            tasks: partialTasks,
+            partial: true 
+          });
+        });
+      });
+      
+      // Send final update
+      BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('tasks:updated', { noteId: payload.noteId });
+      });
+      return result;
+    } catch (error) {
+      console.error('AI analysis failed:', error);
+      return { ok: false, error: error.message || 'AI analysis failed' };
+    }
+  });
+
+  ipcMain.handle('ai:analyze-all', async () => {
+    try {
+      const results = await analyzeAllNotes();
+      BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('tasks:refreshed');
+      });
+      return { ok: true, results };
+    } catch (error) {
+      console.error('AI batch analysis failed:', error);
+      return { ok: false, error: error.message || 'AI batch analysis failed' };
     }
   });
 };

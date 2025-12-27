@@ -16,27 +16,35 @@ body {
   -moz-osx-font-smoothing: auto;
 }
 
-/* Main Dropdown Container - EXACT Apple Menu Style */
+/* Main Dropdown Container - Liquid Glass Apple Style (matches sticky notes) */
 .menubar-dropdown {
   width: 250px;
-  background: rgba(246, 246, 246, 0.98);
-  backdrop-filter: blur(50px) saturate(180%);
-  -webkit-backdrop-filter: blur(50px) saturate(180%);
-  border: 0.5px solid rgba(0, 0, 0, 0.18);
-  border-radius: 5px;
+  background: rgba(242, 242, 247, 0.78);
+  backdrop-filter: blur(80px) saturate(190%);
+  -webkit-backdrop-filter: blur(80px) saturate(190%);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
   box-shadow: 
-    0 0 0 0.5px rgba(0, 0, 0, 0.08),
-    0 18px 50px -10px rgba(0, 0, 0, 0.35),
-    0 10px 20px -5px rgba(0, 0, 0, 0.2);
-  padding: 4px 0;
+    0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    0 20px 40px rgba(0, 0, 0, 0.18),
+    0 8px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  padding: 8px 0;
   margin: 3px;
   overflow: hidden;
 }
 
 @media (prefers-color-scheme: dark) {
   .menubar-dropdown {
-    background: rgba(50, 50, 52, 0.98);
-    border: 0.5px solid rgba(255, 255, 255, 0.13);
+    background: rgba(30, 30, 30, 0.85);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 0 0 0.5px rgba(255, 255, 255, 0.03),
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      0 8px 16px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -148,19 +156,27 @@ body {
 }
 
 .menubar-dropdown__item:hover {
-  background: linear-gradient(180deg, #5E9FF4 0%, #4889E8 100%);
+  background: rgba(0, 0, 0, 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   .menubar-dropdown__item:hover {
-    background: linear-gradient(180deg, #1B7AEE 0%, #0963D4 100%);
+    background: rgba(255, 255, 255, 0.1);
   }
 }
 
 .menubar-dropdown__item:hover .menubar-dropdown__text,
 .menubar-dropdown__item:hover .menubar-dropdown__check,
 .menubar-dropdown__item:hover .menubar-dropdown__shortcut {
-  color: #FFFFFF;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+@media (prefers-color-scheme: dark) {
+  .menubar-dropdown__item:hover .menubar-dropdown__text,
+  .menubar-dropdown__item:hover .menubar-dropdown__check,
+  .menubar-dropdown__item:hover .menubar-dropdown__shortcut {
+    color: rgba(255, 255, 255, 0.85);
+  }
 }
 
 /* Task Item Specific */

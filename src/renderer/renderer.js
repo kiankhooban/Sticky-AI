@@ -20,6 +20,17 @@ const escapeHtml = (text) => {
   return div.innerHTML;
 };
 
+// Debounce helper for auto-analysis
+const debounce = (callback, delay) => {
+  let timer = null;
+  return (...args) => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(() => callback(...args), delay);
+  };
+};
+
 const main = async () => {
   const contentElement = document.querySelector('.note__content');
   const closeButton = document.querySelector('.note__close');
@@ -50,6 +61,12 @@ const main = async () => {
         () => window.stickyAPI.saveNote({ noteId, content }),
         { ok: false }
       );
+      
+      // Trigger debounced auto-analysis after save
+      if (response.ok) {
+        debouncedAutoAnalyze();
+      }
+      
       return response;
     },
     onNewNote: async () => {
@@ -83,6 +100,21 @@ const main = async () => {
   const taskPanelLoading = document.querySelector('[data-loading]');
   const taskPanelEmpty = document.querySelector('[data-empty]');
   const taskPanelList = document.querySelector('[data-task-list]');
+
+  // Debounced auto-analysis (triggered 2.5 seconds after typing stops)
+  const debouncedAutoAnalyze = debounce(async () => {
+    console.log('[UI] Auto-analyzing note after typing stopped...');
+    const result = await safeApiCall(
+      () => window.stickyAPI.analyzeNote(noteId),
+      { ok: false }
+    );
+    
+    if (!result.ok && !result.cached) {
+      console.log('[UI] Auto-analysis failed:', result.error);
+    } else if (result.cached) {
+      console.log('[UI] Using cached analysis results');
+    }
+  }, 2500); // Wait 2.5 seconds after user stops typing
 
   const toggleTaskPanel = (show) => {
     if (show) {
@@ -206,11 +238,31 @@ const main = async () => {
     toggleTaskPanel(false);
   });
 
-  document
-    .querySelector('[data-action="ai-analyze-all"]')
-    .addEventListener('click', () => {
-      statusElement.textContent = 'AI analysis coming in Phase 3';
-    });
+  // Listen for AI analysis updates
+  window.stickyAPI.onTasksUpdated((data) => {
+    if (data.noteId === noteId) {
+      if (taskPanel.classList.contains('is-open')) {
+        loadAllTasks();
+      }
+    }
+  });
+
+  window.stickyAPI.onTasksRefreshed(() => {
+    if (taskPanel.classList.contains('is-open')) {
+      loadAllTasks();
+    }
+  });
+  
+  // Listen for streaming task updates (progressive loading)
+  window.stickyAPI.onTasksStreaming((data) => {
+    if (data.noteId === noteId && data.partial) {
+      console.log('[UI] Streaming tasks:', data.tasks.length);
+      // Show a subtle indicator that tasks are being detected
+      if (taskPanel.classList.contains('is-open')) {
+        statusElement.textContent = `Detecting tasks... (${data.tasks.length} found)`;
+      }
+    }
+  });
 };
 
 window.addEventListener('DOMContentLoaded', main);

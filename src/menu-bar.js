@@ -3,55 +3,32 @@ const fs = require('fs');
 const { BrowserWindow, Tray, nativeImage } = require('electron');
 const Positioner = require('electron-positioner');
 
-const FALLBACK_ICON =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">' +
-      '<rect width="16" height="16" fill="#111" rx="3" />' +
-    '</svg>'
-  );
-
 let tray = null;
 let menuWindow = null;
 
 const loadTrayIcon = () => {
-  const iconPath = path.join(__dirname, '..', 'assets', 'images', 'menubar-logo.svg');
+  // Load custom menu bar icon with retina support
+  const iconPath = path.join(__dirname, '..', 'assets', 'images', 'MenubarLogo.png');
+  
   if (fs.existsSync(iconPath)) {
-    const image = nativeImage.createFromPath(iconPath);
-    const { width, height } = image.getSize();
-    if (!image.isEmpty() && width >= 8 && height >= 8) {
-      const resized = image.resize({ width: 16, height: 16 });
-      resized.setTemplateImage(true);
-      return resized;
-    }
-
     try {
-      const svg = fs.readFileSync(iconPath, 'utf8');
-      const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-      const fallbackSvg = nativeImage.createFromDataURL(dataUrl);
-      if (!fallbackSvg.isEmpty()) {
-        const resized = fallbackSvg.resize({ width: 16, height: 16 });
-        resized.setTemplateImage(true);
-        return resized;
+      const icon = nativeImage.createFromPath(iconPath);
+      if (!icon.isEmpty()) {
+        icon.setTemplateImage(true);
+        console.log('[Menu Bar] Loaded custom icon from:', iconPath);
+        return icon;
       }
     } catch (error) {
-      console.warn('Failed to load SVG tray icon:', error.message);
+      console.log('[Menu Bar] Failed to load icon file:', error.message);
     }
+  } else {
+    console.log('[Menu Bar] Icon file not found at:', iconPath);
   }
-
-  const pngFallback = path.join(__dirname, '..', 'assets', 'images', 'menubar-logo.png');
-  if (fs.existsSync(pngFallback)) {
-    const image = nativeImage.createFromPath(pngFallback);
-    if (!image.isEmpty()) {
-      const resized = image.resize({ width: 16, height: 16 });
-      resized.setTemplateImage(true);
-      return resized;
-    }
-  }
-
-  const image = nativeImage.createFromDataURL(FALLBACK_ICON);
-  image.setTemplateImage(true);
-  return image;
+  
+  // Fallback: Create a simple but visible icon
+  console.log('[Menu Bar] Using fallback system icon');
+  const icon = nativeImage.createFromNamedImage('NSActionTemplate', [22, 22]);
+  return icon;
 };
 
 const createMenuWindow = (preloadPath) => {
