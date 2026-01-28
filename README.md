@@ -185,10 +185,10 @@ MIT
 - **Regenerate your API key** immediately if it's accidentally exposed
 
 ### Recommended API Key Restrictions
-To enhance security, restrict your Gemini API key in Google Cloud Console:
+To enhance security, restrict your Gemini API key:
 1. Visit https://makersuite.google.com/app/apikey
 2. Select your API key and click "Edit"
-3. Set the following restrictions:
+3. Set the following restrictions (if available):
    - **Application restrictions**: HTTP referrers (if applicable)
    - **API restrictions**: Limit to Google Generative Language API only
    - **Quota limits**: Set reasonable daily usage limits
