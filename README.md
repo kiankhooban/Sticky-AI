@@ -175,3 +175,30 @@ MIT
 - Restart the app completely (Cmd+Q then relaunch)
 - Check macOS menu bar settings aren't hiding the icon
 - Try toggling light/dark mode (icon uses template mode)
+
+## Security
+
+### API Key Safety
+- **Never commit your `.env` file** - It's already in `.gitignore`
+- **Never share your API key** publicly or in screenshots
+- **Use `.env.example`** as a template for setting up environment variables
+- **Regenerate your API key** immediately if it's accidentally exposed
+
+### Recommended API Key Restrictions
+To enhance security, restrict your Gemini API key:
+1. Visit https://makersuite.google.com/app/apikey
+2. Select your API key and click "Edit"
+3. Set the following restrictions (if available):
+   - **Application restrictions**: HTTP referrers (if applicable)
+   - **API restrictions**: Limit to Google Generative Language API only
+   - **Quota limits**: Set reasonable daily usage limits
+
+### Check for Exposed Credentials
+If you suspect your API key was committed to git history:
+```bash
+# Check if .env was ever committed
+git log --all --full-history -- .env
+
+# If found, regenerate your API key immediately at:
+# https://makersuite.google.com/app/apikey
+```

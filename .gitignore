@@ -5,3 +5,15 @@ dist/
 .DS_Store
 *.log
 .env
+
+# Environment variables - Enhanced security
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API keys and secrets
+secrets/
+*.key
+*.pem
+config/local.js
